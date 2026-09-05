@@ -23,7 +23,7 @@ export function useTelemetryClient(): TelemetryClient {
   const client = useContext(TelemetryContext);
   if (!client) {
     throw new Error(
-      "@featurely/telemetry-client/react: useTelemetryClient() called outside of a <TelemetryProvider>",
+      "@agustinduelli/telemetry-client/react: useTelemetryClient() called outside of a <TelemetryProvider>",
     );
   }
   return client;

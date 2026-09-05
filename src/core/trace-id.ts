@@ -21,7 +21,7 @@ function getWebCrypto(): Crypto {
   const g = globalThis as { crypto?: Crypto };
   if (!g.crypto || typeof g.crypto.getRandomValues !== "function") {
     throw new Error(
-      "@featurely/telemetry-client: no Web Crypto API available in this runtime (expected globalThis.crypto.getRandomValues)",
+      "@agustinduelli/telemetry-client: no Web Crypto API available in this runtime (expected globalThis.crypto.getRandomValues)",
     );
   }
   return g.crypto;

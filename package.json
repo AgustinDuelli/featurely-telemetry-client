@@ -1,5 +1,5 @@
 {
-  "name": "@featurely/telemetry-client",
+  "name": "@agustinduelli/telemetry-client",
   "version": "0.1.0",
   "private": false,
   "description": "Vendor-agnostic telemetry client for Featurely: framework-free core (spans, metrics, business events) plus optional React and Convex adapters.",

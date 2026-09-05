@@ -140,16 +140,16 @@ class SpanImpl implements Span {
 /** Concrete factory implementing `TelemetryClient`. */
 export function createTelemetryClient(config: TelemetryClientConfig): TelemetryClient {
   if (!config.serviceName) {
-    throw new Error("@featurely/telemetry-client: config.serviceName is required");
+    throw new Error("@agustinduelli/telemetry-client: config.serviceName is required");
   }
   if (!config.endpoint) {
-    throw new Error("@featurely/telemetry-client: config.endpoint is required");
+    throw new Error("@agustinduelli/telemetry-client: config.endpoint is required");
   }
 
   const fetchImpl = config.fetchImpl ?? globalThis.fetch;
   if (typeof fetchImpl !== "function") {
     throw new Error(
-      "@featurely/telemetry-client: no fetch implementation available; pass config.fetchImpl explicitly",
+      "@agustinduelli/telemetry-client: no fetch implementation available; pass config.fetchImpl explicitly",
     );
   }
 
@@ -234,7 +234,7 @@ export function createTelemetryClient(config: TelemetryClientConfig): TelemetryC
   ): Promise<void> {
     if (type === "business_event" && !tenantId) {
       throw new Error(
-        "@featurely/telemetry-client: tenantId is required when recordEvent type is 'business_event'",
+        "@agustinduelli/telemetry-client: tenantId is required when recordEvent type is 'business_event'",
       );
     }
     queue.add({

@@ -1,4 +1,4 @@
-# @featurely/telemetry-client
+# @agustinduelli/telemetry-client
 
 Vendor-agnostic telemetry client for Featurely's observability pipeline. A
 framework-free `core` (spans, metrics, business events, batching) plus two
@@ -6,9 +6,9 @@ optional adapters, `/react` and `/convex`, so consumers only pay for the
 dependencies they actually use.
 
 ```
-@featurely/telemetry-client        # core: TelemetryClient, Span, createTelemetryClient
-@featurely/telemetry-client/react  # TelemetryProvider, useTelemetryClient, useSpan
-@featurely/telemetry-client/convex # createConvexEmitter
+@agustinduelli/telemetry-client        # core: TelemetryClient, Span, createTelemetryClient
+@agustinduelli/telemetry-client/react  # TelemetryProvider, useTelemetryClient, useSpan
+@agustinduelli/telemetry-client/convex # createConvexEmitter
 ```
 
 Published privately to GitHub Packages (`npm.pkg.github.com`), not the public
@@ -17,12 +17,12 @@ npm registry — see `.npmrc` / `.github/workflows/publish.yml`.
 ## Install
 
 ```
-@featurely:registry=https://npm.pkg.github.com
+@agustinduelli:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}
 ```
 
 ```sh
-bun add @featurely/telemetry-client
+bun add @agustinduelli/telemetry-client
 ```
 
 ## Usage
@@ -30,7 +30,7 @@ bun add @featurely/telemetry-client
 ### Core
 
 ```ts
-import { createTelemetryClient } from "@featurely/telemetry-client";
+import { createTelemetryClient } from "@agustinduelli/telemetry-client";
 
 const telemetry = createTelemetryClient({
   endpoint: "https://telemetry.example.com/v1/traces",
@@ -49,7 +49,7 @@ await telemetry.recordEvent("business_event", "post.created", { postId }, projec
 ### React
 
 ```tsx
-import { TelemetryProvider, useSpan } from "@featurely/telemetry-client/react";
+import { TelemetryProvider, useSpan } from "@agustinduelli/telemetry-client/react";
 
 function Root({ children }: { children: React.ReactNode }) {
   return <TelemetryProvider client={telemetry}>{children}</TelemetryProvider>;
@@ -65,7 +65,7 @@ function CreatePostButton() {
 ### Convex
 
 ```ts
-import { createConvexEmitter } from "@featurely/telemetry-client/convex";
+import { createConvexEmitter } from "@agustinduelli/telemetry-client/convex";
 
 const convexEmitter = createConvexEmitter(telemetry);
 
