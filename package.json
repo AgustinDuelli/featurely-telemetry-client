@@ -20,22 +20,22 @@
   "exports": {
     ".": {
       "types": "./dist/core/index.d.ts",
-      "import": "./dist/core/index.mjs",
-      "require": "./dist/core/index.js"
+      "import": "./dist/core/index.js",
+      "require": "./dist/core/index.cjs"
     },
     "./react": {
       "types": "./dist/react/index.d.ts",
-      "import": "./dist/react/index.mjs",
-      "require": "./dist/react/index.js"
+      "import": "./dist/react/index.js",
+      "require": "./dist/react/index.cjs"
     },
     "./convex": {
       "types": "./dist/convex/index.d.ts",
-      "import": "./dist/convex/index.mjs",
-      "require": "./dist/convex/index.js"
+      "import": "./dist/convex/index.js",
+      "require": "./dist/convex/index.cjs"
     }
   },
-  "main": "./dist/core/index.js",
-  "module": "./dist/core/index.mjs",
+  "main": "./dist/core/index.cjs",
+  "module": "./dist/core/index.js",
   "types": "./dist/core/index.d.ts",
   "scripts": {
     "build": "tsup",
