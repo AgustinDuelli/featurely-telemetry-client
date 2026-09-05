@@ -1,0 +1,65 @@
+{
+  "name": "@featurely/telemetry-client",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Vendor-agnostic telemetry client for Featurely: framework-free core (spans, metrics, business events) plus optional React and Convex adapters.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
+    "access": "restricted"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AgustinDuelli/featurely-telemetry-client.git"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.mjs",
+      "require": "./dist/core/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.mjs",
+      "require": "./dist/react/index.js"
+    },
+    "./convex": {
+      "types": "./dist/convex/index.d.ts",
+      "import": "./dist/convex/index.mjs",
+      "require": "./dist/convex/index.js"
+    }
+  },
+  "main": "./dist/core/index.js",
+  "module": "./dist/core/index.mjs",
+  "types": "./dist/core/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "peerDependencies": {
+    "convex": ">=1.0.0",
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "react-dom": { "optional": true },
+    "convex": { "optional": true }
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "convex": "^1.36.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tsup": "^8.3.5",
+    "typescript": "~6.0.3",
+    "vitest": "^2.1.8"
+  }
+}
