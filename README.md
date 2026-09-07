@@ -18,8 +18,11 @@ npm registry — see `.npmrc` / `.github/workflows/publish.yml`.
 
 ```
 @agustinduelli:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GITHUB_PACKAGES_TOKEN}
+//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}
 ```
+
+(`GH_PACKAGES_TOKEN`, not `GITHUB_PACKAGES_TOKEN` — GitHub Actions rejects any
+secret name starting with the reserved `GITHUB_` prefix.)
 
 ```sh
 bun add @agustinduelli/telemetry-client
