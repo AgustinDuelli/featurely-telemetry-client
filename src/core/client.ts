@@ -5,8 +5,19 @@ import { generateSpanId, generateTraceId } from "./trace-id.js";
 export interface TelemetryClientConfig {
   /** URL of the telemetry service ingest endpoint (`POST /v1/traces` or `POST /ingest/events`). */
   endpoint: string;
-  /** Sent as the `x-api-key` header, per contract C1. */
+  /**
+   * Sent as either the `x-api-key` header ("api-key", contract C1 — the
+   * browser ingest route, `/v1/traces`) or the `Authorization: Bearer`
+   * header ("bearer" — the Convex ingest route, `/ingest/events`, which
+   * validates a bearer token and never looks at `x-api-key`). Defaults to
+   * "api-key" to preserve existing browser behavior; the Convex adapter
+   * (`createConvexEmitter`) requires callers to pass "bearer" explicitly
+   * (see `convex/index.ts`) since a Convex-issued key sent as `x-api-key`
+   * is silently rejected by the server with no visible error on either
+   * side (delivery failures are swallowed by design, see `sendBatch`).
+   */
   apiKey: string;
+  authScheme?: "api-key" | "bearer";
   /**
    * Identifies the emitting application/product as an OTel `Resource`
    * (`service.name`), not as a span attribute. Required, no default —
@@ -162,12 +173,16 @@ export function createTelemetryClient(config: TelemetryClientConfig): TelemetryC
       timestamp: Date.now(),
       events,
     };
+    const authHeader: Record<string, string> =
+      config.authScheme === "bearer"
+        ? { authorization: `Bearer ${config.apiKey}` }
+        : { "x-api-key": config.apiKey };
     try {
       await fetchImpl(config.endpoint, {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          "x-api-key": config.apiKey,
+          ...authHeader,
         },
         body: JSON.stringify(body),
       });

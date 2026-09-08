@@ -68,7 +68,18 @@ function CreatePostButton() {
 ### Convex
 
 ```ts
+import { createTelemetryClient } from "@agustinduelli/telemetry-client";
 import { createConvexEmitter } from "@agustinduelli/telemetry-client/convex";
+
+const telemetry = createTelemetryClient({
+  endpoint: "https://telemetry.example.com/ingest/events",
+  apiKey: process.env.TELEMETRY_API_KEY!,
+  authScheme: "bearer", // required -- the Convex ingest route validates
+                        // Authorization: Bearer, not x-api-key (the
+                        // browser route's scheme, and this option's default)
+  serviceName: "featurely-convex",
+  environment: "production",
+});
 
 const convexEmitter = createConvexEmitter(telemetry);
 
@@ -78,6 +89,12 @@ export const emit = internalAction({
   },
 });
 ```
+
+`createConvexEmitter` flushes immediately after every event — it cannot
+rely on the core client's batching timer, because a Convex
+`internalAction`'s execution environment is torn down as soon as its
+handler promise resolves, before a later timer would ever get a chance to
+fire.
 
 ## Development
 

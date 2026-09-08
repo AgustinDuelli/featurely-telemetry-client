@@ -129,6 +129,45 @@ describe("createTelemetryClient", () => {
     expect(typeof event.duration_ms).toBe("number");
   });
 
+  it("sends x-api-key by default (authScheme omitted)", async () => {
+    const { fetchImpl, calls } = makeMockFetch();
+    const client = createTelemetryClient({
+      endpoint: "https://telemetry.example.com/v1/traces",
+      apiKey: "browser-key",
+      serviceName: "featurely-web",
+      environment: "production",
+      batch: { maxSize: 100, flushIntervalMs: 60_000 },
+      fetchImpl,
+    });
+
+    await client.recordEvent("log", "debug.message");
+    await client.flush();
+
+    const headers = calls[0]!.init.headers as Record<string, string>;
+    expect(headers["x-api-key"]).toBe("browser-key");
+    expect(headers.authorization).toBeUndefined();
+  });
+
+  it("sends Authorization: Bearer when authScheme is 'bearer', never x-api-key", async () => {
+    const { fetchImpl, calls } = makeMockFetch();
+    const client = createTelemetryClient({
+      endpoint: "https://telemetry.example.com/ingest/events",
+      apiKey: "convex-key",
+      authScheme: "bearer",
+      serviceName: "featurely-convex",
+      environment: "production",
+      batch: { maxSize: 100, flushIntervalMs: 60_000 },
+      fetchImpl,
+    });
+
+    await client.recordEvent("business_event", "post.created", {}, "project-slug");
+    await client.flush();
+
+    const headers = calls[0]!.init.headers as Record<string, string>;
+    expect(headers.authorization).toBe("Bearer convex-key");
+    expect(headers["x-api-key"]).toBeUndefined();
+  });
+
   it("never throws when the underlying fetch rejects", async () => {
     const fetchImpl = vi.fn(async () => {
       throw new Error("network down");
