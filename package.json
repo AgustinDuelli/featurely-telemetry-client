@@ -1,6 +1,6 @@
 {
   "name": "@agustinduelli/telemetry-client",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": false,
   "description": "Vendor-agnostic telemetry client for Featurely: framework-free core (spans, metrics, business events) plus optional React and Convex adapters.",
   "license": "UNLICENSED",
