@@ -47,7 +47,16 @@ export interface Span {
 export type RecordEventType = "log" | "business_event";
 
 export interface TelemetryClient {
-  startSpan(name: string, options?: { parentSpanId?: string; traceId?: string }): Span;
+  /**
+   * `spanId` and `startedAt` (epoch ms) are for spans reported after the
+   * fact by a process that did not hold the span open -- e.g. a run whose
+   * identity was derived ahead of time so other spans could already point
+   * at it as their parent. Leave them out for ordinary spans.
+   */
+  startSpan(
+    name: string,
+    options?: { parentSpanId?: string; traceId?: string; spanId?: string; startedAt?: number },
+  ): Span;
   withSpan<T>(name: string, fn: (span: Span) => T): T;
   recordMetric(name: string, value: number, attributes?: Record<string, string | number>): void;
   /**
@@ -118,12 +127,14 @@ class SpanImpl implements Span {
     parentSpanId: string | undefined,
     traceId: string,
     onEnd: (event: WireEvent) => void,
+    spanId?: string,
+    startedAt?: number,
   ) {
     this.name = name;
     this.parentSpanId = parentSpanId;
     this.traceId = traceId;
-    this.spanId = generateSpanId();
-    this.startedAt = Date.now();
+    this.spanId = spanId ?? generateSpanId();
+    this.startedAt = startedAt ?? Date.now();
     this.onEnd = onEnd;
   }
 
@@ -138,7 +149,10 @@ class SpanImpl implements Span {
   end(): void {
     if (this.ended) return;
     this.ended = true;
-    const durationMs = Date.now() - this.startedAt;
+    // The telemetry service rejects the whole batch when a span has
+    // duration_ms <= 0, and Date.now() has millisecond resolution, so a
+    // span that starts and ends within one tick reports 1 ms instead of 0.
+    const durationMs = Math.max(1, Date.now() - this.startedAt);
     this.onEnd({
       source: detectSource(),
       trace_id: this.traceId,
@@ -202,9 +216,19 @@ export function createTelemetryClient(config: TelemetryClientConfig): TelemetryC
 
   const queue = new BatchQueue<WireEvent>(sendBatch, config.batch);
 
-  function startSpan(name: string, options?: { parentSpanId?: string; traceId?: string }): Span {
+  function startSpan(
+    name: string,
+    options?: { parentSpanId?: string; traceId?: string; spanId?: string; startedAt?: number },
+  ): Span {
     const traceId = options?.traceId ?? generateTraceId();
-    return new SpanImpl(name, options?.parentSpanId, traceId, (event) => queue.add(event));
+    return new SpanImpl(
+      name,
+      options?.parentSpanId,
+      traceId,
+      (event) => queue.add(event),
+      options?.spanId,
+      options?.startedAt,
+    );
   }
 
   function withSpan<T>(name: string, fn: (span: Span) => T): T {

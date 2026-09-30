@@ -111,6 +111,55 @@ describe("createTelemetryClient", () => {
     expect(a!.trace_id).not.toBe(b!.trace_id);
   });
 
+  it("reports at least 1 ms for a span that starts and ends within the same millisecond", async () => {
+    // featurely-telemetry rejects the WHOLE batch (400) when any span has
+    // duration_ms <= 0, and this client ignores the response, so a single
+    // sub-millisecond span would silently drop every event sent with it.
+    const { fetchImpl, calls } = makeMockFetch();
+    const client = createTelemetryClient({
+      endpoint: "https://telemetry.example.com/ingest/events",
+      apiKey: "test-key",
+      serviceName: "featurely-web",
+      environment: "production",
+      batch: { maxSize: 100, flushIntervalMs: 60_000 },
+      fetchImpl,
+    });
+
+    client.startSpan("instant").end();
+    await client.flush();
+
+    const body = JSON.parse(calls[0]!.init.body as string) as WireEventBatch;
+    expect(body.events[0]!.duration_ms).toBeGreaterThanOrEqual(1);
+  });
+
+  it("startSpan keeps an explicit spanId and start time, for spans reported after the fact", async () => {
+    const { fetchImpl, calls } = makeMockFetch();
+    const client = createTelemetryClient({
+      endpoint: "https://telemetry.example.com/ingest/events",
+      apiKey: "test-key",
+      serviceName: "featurely-convex",
+      environment: "production",
+      batch: { maxSize: 100, flushIntervalMs: 60_000 },
+      fetchImpl,
+    });
+    const startedAt = Date.now() - 5_000;
+
+    const span = client.startSpan("mirror.sync_run", {
+      traceId: "0af7651916cd43dd8448eb211c80319c",
+      spanId: "b7ad6b7169203331",
+      startedAt,
+    });
+    span.end();
+    await client.flush();
+
+    expect(span.spanId).toBe("b7ad6b7169203331");
+    const event = (JSON.parse(calls[0]!.init.body as string) as WireEventBatch).events[0]!;
+    expect(event.span_id).toBe("b7ad6b7169203331");
+    expect(event.trace_id).toBe("0af7651916cd43dd8448eb211c80319c");
+    expect(event.timestamp).toBe(startedAt);
+    expect(event.duration_ms).toBeGreaterThanOrEqual(5_000);
+  });
+
   it("rejects business_event without tenantId", async () => {
     const { fetchImpl } = makeMockFetch();
     const client = createTelemetryClient({
