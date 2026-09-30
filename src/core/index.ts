@@ -10,3 +10,8 @@ export {
 } from "./client.js";
 export { generateTraceId, generateSpanId, isValidTraceId, isValidSpanId } from "./trace-id.js";
 export { BatchQueue, DEFAULT_BATCH_OPTIONS, type BatchOptions, type FlushHandler } from "./batching.js";
+export {
+  createPageLoadTracker,
+  type PageLoadTracker,
+  type PageQueryHandle,
+} from "./page-load.js";

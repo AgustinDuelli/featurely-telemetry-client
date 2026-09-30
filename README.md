@@ -47,6 +47,10 @@ span.setAttribute("projectId", project.slug);
 span.end();
 
 await telemetry.recordEvent("business_event", "post.created", { postId }, project.slug);
+
+// Optional 5th argument: join an existing trace instead of generating a new one
+// (e.g. the traceId of the browser span that triggered this event).
+await telemetry.recordEvent("business_event", "post.created", { postId }, project.slug, span.traceId);
 ```
 
 ### React
@@ -64,6 +68,24 @@ function CreatePostButton() {
   // browser <-> Convex (WebSocket has no traceparent header propagation)
 }
 ```
+
+#### Page-load trace
+
+```tsx
+import { useInstrumentedQuery, usePageLoad } from "@agustinduelli/telemetry-client/react";
+
+function FeedPage() {
+  // Root span "page.load.feed" ends when every query below has resolved.
+  const pageLoad = usePageLoad("page.load.feed");
+  const posts = useInstrumentedQuery("feed.posts", () => useQuery(api.posts.list), { pageLoad });
+  const top = useInstrumentedQuery("feed.leaderboard", () => useQuery(api.users.top), { pageLoad });
+}
+```
+
+Each query is a child span of the root, in the same trace, so a trace viewer
+shows which resource was the slowest. All queries of the page must mount in
+the same commit as `usePageLoad`; the root closes when the last registered
+query resolves.
 
 ### Convex
 
@@ -84,8 +106,9 @@ const telemetry = createTelemetryClient({
 const convexEmitter = createConvexEmitter(telemetry);
 
 export const emit = internalAction({
-  handler: async (_ctx, args: { name: string; tenantId: string; attributes: Record<string, string | number | boolean | null> }) => {
-    await convexEmitter.emitBusinessEvent(args.name, args.tenantId, args.attributes);
+  handler: async (_ctx, args: { name: string; tenantId: string; attributes: Record<string, string | number | boolean | null>; traceId?: string }) => {
+    // traceId is optional: pass the browser span's traceId so the event joins its trace
+    await convexEmitter.emitBusinessEvent(args.name, args.tenantId, args.attributes, args.traceId);
   },
 });
 ```
