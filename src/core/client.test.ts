@@ -64,6 +64,53 @@ describe("createTelemetryClient", () => {
     await client.flush();
   });
 
+  it("recordEvent uses the caller's traceId instead of generating one when provided", async () => {
+    const { fetchImpl, calls } = makeMockFetch();
+    const client = createTelemetryClient({
+      endpoint: "https://telemetry.example.com/ingest/events",
+      apiKey: "test-key",
+      serviceName: "featurely-web",
+      environment: "production",
+      batch: { maxSize: 100, flushIntervalMs: 60_000 },
+      fetchImpl,
+    });
+    const externalTraceId = "0af7651916cd43dd8448eb211c80319c";
+
+    await client.recordEvent(
+      "business_event",
+      "post.created",
+      { postId: "abc123" },
+      "project-slug",
+      externalTraceId,
+    );
+    await client.flush();
+
+    const body = JSON.parse(calls[0]!.init.body as string) as WireEventBatch;
+    expect(body.events[0]!.trace_id).toBe(externalTraceId);
+  });
+
+  it("recordEvent still generates a fresh traceId when none is passed", async () => {
+    const { fetchImpl, calls } = makeMockFetch();
+    const client = createTelemetryClient({
+      endpoint: "https://telemetry.example.com/ingest/events",
+      apiKey: "test-key",
+      serviceName: "featurely-web",
+      environment: "production",
+      batch: { maxSize: 100, flushIntervalMs: 60_000 },
+      fetchImpl,
+    });
+
+    await client.recordEvent("log", "debug.a");
+    await client.recordEvent("log", "debug.b");
+    await client.flush();
+
+    const body = JSON.parse(calls[0]!.init.body as string) as WireEventBatch;
+    const [a, b] = body.events;
+    expect(a!.trace_id).toMatch(/^[0-9a-f]{32}$/);
+    expect(b!.trace_id).toMatch(/^[0-9a-f]{32}$/);
+    expect(a!.trace_id).not.toBe(b!.trace_id);
+  });
+
   it("rejects business_event without tenantId", async () => {
     const { fetchImpl } = makeMockFetch();
     const client = createTelemetryClient({

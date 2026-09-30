@@ -54,12 +54,18 @@ export interface TelemetryClient {
    * `tenantId` is required for `type === "business_event"` (maps directly to
    * the `tenant_id` column of `analytics_events`, a top-level field, not
    * part of `attributes`); irrelevant/omittable for `"log"`.
+   *
+   * `traceId`, when given, is used as the event's `trace_id` instead of a
+   * freshly generated one, so an event emitted on behalf of an existing span
+   * (e.g. a Convex business event triggered by a browser span) joins that
+   * span's trace. Omitted, behavior is unchanged.
    */
   recordEvent(
     type: RecordEventType,
     name: string,
     attributes?: Record<string, string | number | boolean | null>,
     tenantId?: string,
+    traceId?: string,
   ): Promise<void>;
   flush(): Promise<void>;
 }
@@ -246,6 +252,7 @@ export function createTelemetryClient(config: TelemetryClientConfig): TelemetryC
     name: string,
     attributes?: Record<string, string | number | boolean | null>,
     tenantId?: string,
+    traceId?: string,
   ): Promise<void> {
     if (type === "business_event" && !tenantId) {
       throw new Error(
@@ -254,7 +261,7 @@ export function createTelemetryClient(config: TelemetryClientConfig): TelemetryC
     }
     queue.add({
       source: detectSource(),
-      trace_id: generateTraceId(),
+      trace_id: traceId ?? generateTraceId(),
       name,
       type,
       attributes,

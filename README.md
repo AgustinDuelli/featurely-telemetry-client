@@ -47,6 +47,10 @@ span.setAttribute("projectId", project.slug);
 span.end();
 
 await telemetry.recordEvent("business_event", "post.created", { postId }, project.slug);
+
+// Optional 5th argument: join an existing trace instead of generating a new one
+// (e.g. the traceId of the browser span that triggered this event).
+await telemetry.recordEvent("business_event", "post.created", { postId }, project.slug, span.traceId);
 ```
 
 ### React
@@ -84,8 +88,9 @@ const telemetry = createTelemetryClient({
 const convexEmitter = createConvexEmitter(telemetry);
 
 export const emit = internalAction({
-  handler: async (_ctx, args: { name: string; tenantId: string; attributes: Record<string, string | number | boolean | null> }) => {
-    await convexEmitter.emitBusinessEvent(args.name, args.tenantId, args.attributes);
+  handler: async (_ctx, args: { name: string; tenantId: string; attributes: Record<string, string | number | boolean | null>; traceId?: string }) => {
+    // traceId is optional: pass the browser span's traceId so the event joins its trace
+    await convexEmitter.emitBusinessEvent(args.name, args.tenantId, args.attributes, args.traceId);
   },
 });
 ```
