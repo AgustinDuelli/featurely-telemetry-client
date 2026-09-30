@@ -69,6 +69,24 @@ function CreatePostButton() {
 }
 ```
 
+#### Page-load trace
+
+```tsx
+import { useInstrumentedQuery, usePageLoad } from "@agustinduelli/telemetry-client/react";
+
+function FeedPage() {
+  // Root span "page.load.feed" ends when every query below has resolved.
+  const pageLoad = usePageLoad("page.load.feed");
+  const posts = useInstrumentedQuery("feed.posts", () => useQuery(api.posts.list), { pageLoad });
+  const top = useInstrumentedQuery("feed.leaderboard", () => useQuery(api.users.top), { pageLoad });
+}
+```
+
+Each query is a child span of the root, in the same trace, so a trace viewer
+shows which resource was the slowest. All queries of the page must mount in
+the same commit as `usePageLoad`; the root closes when the last registered
+query resolves.
+
 ### Convex
 
 ```ts
