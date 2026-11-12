@@ -43,4 +43,29 @@ describe("createConvexEmitter", () => {
     const headers = calls[0]!.init.headers as Record<string, string>;
     expect(headers.authorization).toBe("Bearer convex-key");
   });
+
+  it("forwards an external traceId so the business event joins the caller's trace", async () => {
+    const { fetchImpl, calls } = makeMockFetch();
+    const client = createTelemetryClient({
+      endpoint: "https://telemetry.example.com/ingest/events",
+      apiKey: "convex-key",
+      authScheme: "bearer",
+      serviceName: "featurely-convex",
+      environment: "production",
+      batch: { maxSize: 100, flushIntervalMs: 60_000 },
+      fetchImpl,
+    });
+    const externalTraceId = "0af7651916cd43dd8448eb211c80319c";
+
+    const emitter = createConvexEmitter(client);
+    await emitter.emitBusinessEvent(
+      "post.created",
+      "project-slug",
+      { postId: "abc123" },
+      externalTraceId,
+    );
+
+    const body = JSON.parse(calls[0]!.init.body as string) as WireEventBatch;
+    expect(body.events[0]!.trace_id).toBe(externalTraceId);
+  });
 });

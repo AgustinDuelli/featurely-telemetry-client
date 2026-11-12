@@ -5,6 +5,7 @@ export interface ConvexEmitter {
     name: string,
     tenantId: string,
     attributes: Record<string, string | number | boolean | null>,
+    traceId?: string,
   ): Promise<void>;
 }
 
@@ -31,8 +32,9 @@ export function createConvexEmitter(client: TelemetryClient): ConvexEmitter {
       name: string,
       tenantId: string,
       attributes: Record<string, string | number | boolean | null>,
+      traceId?: string,
     ): Promise<void> {
-      await client.recordEvent("business_event", name, attributes, tenantId);
+      await client.recordEvent("business_event", name, attributes, tenantId, traceId);
       await client.flush();
     },
   };

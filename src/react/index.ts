@@ -1,5 +1,5 @@
 import { createContext, createElement, useContext, useEffect, useMemo, useRef, type ReactNode } from "react";
-import type { Span, TelemetryClient } from "../core/index.js";
+import { createPageLoadTracker, type PageLoadTracker, type Span, type TelemetryClient } from "../core/index.js";
 
 const TelemetryContext = createContext<TelemetryClient | null>(null);
 
@@ -41,6 +41,27 @@ export function useSpan(name: string): Span {
 }
 
 /**
+ * Opens a page-load trace: a root span plus one child span per critical
+ * query registered through `useInstrumentedQuery(name, fn, { pageLoad })`.
+ * The tracker is created once per component instance. Every query of the
+ * page must mount in the same commit as this hook's component (see
+ * `createPageLoadTracker`).
+ */
+export function usePageLoad(name: string): PageLoadTracker {
+  const client = useTelemetryClient();
+  const trackerRef = useRef<PageLoadTracker | null>(null);
+  if (trackerRef.current === null) {
+    trackerRef.current = createPageLoadTracker(client, name);
+  }
+  return trackerRef.current;
+}
+
+export interface InstrumentedQueryOptions {
+  /** Makes this query's span a child of the page-load root instead of a trace of its own. */
+  pageLoad?: PageLoadTracker;
+}
+
+/**
  * Level 2 instrumentation (`specs/modelo-datos.md`, "Adaptador `/react` —
  * Nivel 2"): wraps a Convex `useQuery` call to measure time from first
  * subscription to first non-`undefined` result — the "first load" latency
@@ -61,15 +82,19 @@ export function useSpan(name: string): Span {
  * reported; latency percentiles are left as a Nivel 3 gap for a future
  * iteration if per-query timing becomes available.
  */
-export function useInstrumentedQuery<T>(name: string, queryFn: () => T): T {
+export function useInstrumentedQuery<T>(
+  name: string,
+  queryFn: () => T,
+  options?: InstrumentedQueryOptions,
+): T {
   const client = useTelemetryClient();
   const result = queryFn();
 
-  const spanRef = useRef<Span | null>(null);
+  const spanRef = useRef<{ end(): void } | null>(null);
   const settledRef = useRef(false);
   const requeryCountRef = useRef(0);
   if (spanRef.current === null && !settledRef.current) {
-    spanRef.current = client.startSpan(name);
+    spanRef.current = options?.pageLoad ? options.pageLoad.startQuery(name) : client.startSpan(name);
   }
 
   useEffect(() => {
